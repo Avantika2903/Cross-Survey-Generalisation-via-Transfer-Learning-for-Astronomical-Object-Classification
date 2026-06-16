@@ -1,0 +1,314 @@
+# to know distribution of sub categories inside galaxy
+
+from dl import queryClient as qc
+
+query = """
+SELECT TOP 10000
+    z
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z IS NOT NULL
+"""
+
+result = qc.query(sql=query)
+print(result[:5000])
+
+#for stratified downsampling to include diversity
+
+from dl import queryClient as qc
+
+query = """
+SELECT
+CASE
+    WHEN z < 0.2 THEN '0-0.2'
+    WHEN z < 0.5 THEN '0.2-0.5'
+    WHEN z < 0.8 THEN '0.5-0.8'
+    WHEN z < 1.2 THEN '0.8-1.2'
+    ELSE '>1.2'
+END AS z_bin,
+COUNT(*) AS total
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+GROUP BY z_bin
+ORDER BY z_bin
+
+from dl import queryClient as qc
+import pandas as pd
+from io import StringIO
+
+# Bin 1
+q1 = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z >= 0.0
+AND z < 0.2
+"""
+df1 = pd.read_csv(StringIO(qc.query(sql=q1)))
+
+# Bin 2
+q2 = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z >= 0.2
+AND z < 0.5
+"""
+df2 = pd.read_csv(StringIO(qc.query(sql=q2)))
+
+q3 = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z >= 0.5
+AND z < 0.8
+"""
+df3 = pd.read_csv(StringIO(qc.query(sql=q3)))
+
+q4 = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z >= 0.8
+AND z < 1.2
+"""
+df4 = pd.read_csv(StringIO(qc.query(sql=q4)))
+
+q5 = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='GALAXY'
+AND zwarn=0
+AND z >= 1.2
+"""
+df5 = pd.read_csv(StringIO(qc.query(sql=q5)))
+
+from dl import queryClient as qc
+import pandas as pd
+from io import StringIO
+
+galaxy_df.to_csv("galaxy.csv", index=False)
+
+# QSO: z < 1
+q1 = """
+SELECT TOP 1250
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='QSO'
+AND zwarn=0
+AND z < 1
+"""
+df1 = pd.read_csv(StringIO(qc.query(sql=q1)))
+
+# QSO: 1 <= z < 2
+q2 = """
+SELECT TOP 1250
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='QSO'
+AND zwarn=0
+AND z >= 1
+AND z < 2
+"""
+df2 = pd.read_csv(StringIO(qc.query(sql=q2)))
+
+# QSO: 2 <= z < 3
+q3 = """
+SELECT TOP 1250
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='QSO'
+AND zwarn=0
+AND z >= 2
+AND z < 3
+"""
+df3 = pd.read_csv(StringIO(qc.query(sql=q3)))
+
+# QSO: z >= 3
+q4 = """
+SELECT TOP 1250
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='QSO'
+AND zwarn=0
+AND z >= 3
+"""
+df4 = pd.read_csv(StringIO(qc.query(sql=q4)))
+quasars_df = pd.concat(
+    [df1, df2, df3, df4],
+    ignore_index=True
+)
+
+print(len(quasars_df))
+quasars_df.to_csv("quasars.csv", index=False)
+
+from dl import queryClient as qc
+import pandas as pd
+from io import StringIO
+q_k = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='K'
+AND zwarn=0
+"""
+q_g = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='G'
+AND zwarn=0
+"""
+
+q_m = """
+SELECT TOP 1000
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='M'
+AND zwarn=0
+"""
+
+q_f = """
+SELECT TOP 800
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='F'
+AND zwarn=0
+"""
+
+q_wd = """
+SELECT TOP 600
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='WD'
+AND zwarn=0
+"""
+
+q_a = """
+SELECT TOP 400
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='A'
+AND zwarn=0
+"""
+q_b = """
+SELECT TOP 150
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='B'
+AND zwarn=0
+"""
+q_cv = """
+SELECT TOP 50
+    mean_fiber_ra,
+    mean_fiber_dec,
+    spectype,
+    subtype,
+    z,
+    targetid
+FROM desi_dr1.zpix
+WHERE spectype='STAR'
+AND subtype='CV'
+AND zwarn=0
+"""
+
+dfs = []
+
+for q in [q_k, q_g, q_m, q_f, q_wd, q_a, q_b, q_cv]:
+    dfs.append(pd.read_csv(StringIO(qc.query(sql=q))))
+
+star_df = pd.concat(dfs, ignore_index=True)
+
+
+"""
+
+print(qc.query(sql=query))
