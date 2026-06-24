@@ -1,0 +1,83 @@
+import pandas as pd
+import requests
+import os
+import time
+
+# -----------------------------
+# CONFIG
+# -----------------------------
+CSV_PATH = "final_ml_dataset_avantikaa_4856.csv"
+OUTPUT_DIR = "/content/drive/MyDrive/sdss_images"
+
+IMG_SIZE = 128
+SCALE = 0.4
+DELAY = 2.5
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# -----------------------------
+# LOAD CSV
+# -----------------------------
+df = pd.read_csv(CSV_PATH).iloc[57001:59001]
+
+print("Total rows:", len(df))
+
+# -----------------------------
+# SDSS FUNCTION (FIXED + RETRY)
+# -----------------------------
+def fetch_image(ra, dec, idx):
+
+    url = "https://skyservice.pha.jhu.edu/DR10/ImgCutout/getjpeg.aspx"
+
+    params = {
+        "ra": ra,
+        "dec": dec,
+        "scale": SCALE,
+        "width": IMG_SIZE,
+        "height": IMG_SIZE,
+        "opt": ""
+    }
+
+    for attempt in range(3):
+        try:
+            r = requests.get(url, params=params, timeout=60)
+
+            if r.status_code == 200 and len(r.content) > 1000:
+
+                file_path = os.path.join(OUTPUT_DIR, f"img_{idx}.jpg")
+
+                with open(file_path, "wb") as f:
+                    f.write(r.content)
+
+                return True
+
+            elif r.status_code == 503:
+                print(f"Server busy at {idx}, retry {attempt+1}")
+                time.sleep(5 * (attempt + 1))
+
+            else:
+                print(f"Failed {idx} | Status:", r.status_code)
+                return False
+
+        except Exception as e:
+            print(f"Error {idx}:", e)
+
+    return False
+
+
+# -----------------------------
+# LOOP
+# -----------------------------
+for i, row in df.iterrows():
+
+    ra = float(row["ra"])
+    dec = float(row["dec"])
+
+    fetch_image(ra, dec, i)
+
+    if i % 50 == 0:
+        print("Processed:", i)
+
+    time.sleep(DELAY)
+
+print("DONE")
