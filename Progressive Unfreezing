@@ -1,1 +1,180 @@
 
+import torch
+
+checkpoint = torch.load(
+    "/content/drive/MyDrive/checkpoints/best_sdss_pretrained.pth",
+    map_location=device
+)
+
+model.load_state_dict(checkpoint["model_state_dict"])
+
+print("✓ SDSS pretrained weights loaded.")
+
+for param in model.parameters():
+    param.requires_grad = False
+
+for param in model.classifier.parameters():
+    param.requires_grad = True
+
+print("Stage 1")
+print("Trainable:")
+print("Classifier")
+
+import torch.optim as optim
+
+criterion = torch.nn.CrossEntropyLoss()
+
+optimizer = optim.AdamW(
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=1e-4,
+    weight_decay=1e-4
+)
+
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="max",
+    factor=0.5,
+    patience=2
+)
+
+SAVE_DIR = "/content/drive/MyDrive/checkpoints"
+
+EPOCHS = 5
+
+best_f1 = 0.0
+
+history = {
+    "train_loss": [],
+    "val_loss": [],
+    "train_acc": [],
+    "val_acc": [],
+    "train_f1": [],
+    "val_f1": []
+}
+
+for epoch in range(EPOCHS):
+
+    print(f"\nEpoch {epoch+1}/{EPOCHS}")
+    print("="*60)
+
+    start = time.time()
+
+    train_loss, train_acc, train_prec, train_rec, train_f1 = train_one_epoch(
+        model,
+        desi_train_loader,
+        criterion,
+        optimizer,
+        device
+    )
+
+    val_loss, val_acc, val_prec, val_rec, val_f1 = validate(
+        model,
+        desi_val_loader,
+        criterion,
+        device
+    )
+
+    scheduler.step(val_f1)
+
+    history["train_loss"].append(train_loss)
+    history["val_loss"].append(val_loss)
+
+    history["train_acc"].append(train_acc)
+    history["val_acc"].append(val_acc)
+
+    history["train_f1"].append(train_f1)
+    history["val_f1"].append(val_f1)
+
+    print("\nTRAIN")
+    print(f"Loss      : {train_loss:.4f}")
+    print(f"Accuracy  : {train_acc:.4f}")
+    print(f"Precision : {train_prec:.4f}")
+    print(f"Recall    : {train_rec:.4f}")
+    print(f"F1 Score  : {train_f1:.4f}")
+
+    print("\nVALIDATION")
+    print(f"Loss      : {val_loss:.4f}")
+    print(f"Accuracy  : {val_acc:.4f}")
+    print(f"Precision : {val_prec:.4f}")
+    print(f"Recall    : {val_rec:.4f}")
+    print(f"F1 Score  : {val_f1:.4f}")
+
+    print(f"\nLearning Rate : {optimizer.param_groups[0]['lr']:.7f}")
+    print(f"Epoch Time : {time.time()-start:.2f} sec")
+
+    if val_f1 > best_f1:
+
+        best_f1 = val_f1
+
+        torch.save(
+            {
+                "epoch": epoch + 1,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "scheduler_state_dict": scheduler.state_dict(),
+                "best_f1": best_f1
+            },
+            f"{SAVE_DIR}exp8_stage4_best.pth"
+        )
+
+        print("\n✓ Best model saved.")
+
+history_df = pd.DataFrame(history)
+
+history_df.to_csv(
+    f"{SAVE_DIR}exp8_stage4_best.pth",
+    index=False
+)
+
+print("\n" + "="*60)
+print("EXPERIMENT 8 FINISHED")
+print("="*60)
+print(f"Best Validation F1 : {best_f1:.4f}")
+
+=======STAGE2=======
+
+optimizer = optim.AdamW(
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=5e-5,
+    weight_decay=1e-4
+)
+
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="max",
+    factor=0.5,
+    patience=2
+)
+
+for param in model.features[8].parameters():
+    param.requires_grad = True
+
+print("Stage 2")
+print("Trainable:")
+print("features[8]")
+print("classifier")
+
+====STAGE3====
+for param in model.features[7].parameters():
+    param.requires_grad = True
+
+print("Stage 3")
+print("Trainable:")
+print("features[7]")
+print("features[8]")
+print("classifier")
+
+optimizer = optim.AdamW(
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=2e-5,
+    weight_decay=1e-4
+)
+
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="max",
+    factor=0.5,
+    patience=2
+)
+
+
